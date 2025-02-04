@@ -1,0 +1,530 @@
+/*
+*  Solution to course project #04
+* Introduction to programming course
+* Faculty of Mathematics and Informatics of Sofia University
+* Winter semester 2023/2024
+*
+* @author Петя Федева Чиликова
+* @idnumber 0MI0600534
+* @compiler VC
+* Polynomial Calculator
+*/
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+const double ZERO = 1e-10;
+
+bool isValidInput(int degree) {
+	return degree >= 1;
+}
+
+void PrintPolynomial(double* coef, int degree) {
+	bool first = true;
+	for (int i = degree; i >= 0; i--) {
+		if (coef[i] != 0) {
+			if (!first && coef[i] > 0) {
+				cout << "+";
+			}
+			if (i == 0) {
+				cout << coef[i];
+			}
+			else if (i == 1 && coef[i] != 1) {
+				cout << coef[i] << "x";
+			}
+			else if (i == 1 && (coef[i] == 1 || coef[i] == -1)) {
+				cout << "x";
+			}
+
+			else if (coef[i] == 1) {
+				cout << "x^" << i;
+			}
+			else if (i == degree && coef[i] == -1) {
+				cout << "-x^" << i;
+			}
+			else {
+				cout << coef[i] << "x^" << i;
+			}
+			first = false;
+		}
+	}
+	cout << endl;
+}
+
+void PrintPolynomialPlusA(double* coef, int degree, int a) {
+	bool first = true;
+	for (int i = degree; i >= 0; i--) {
+		if (coef[i] != 0) {
+			if (!first && coef[i] > 0) {
+				cout << "+";
+			}
+			if (i == 0) {
+				cout << coef[i];
+			}
+			else if (i == 1 && coef[i] != 1) {
+				cout << coef[i] << "(x+" << a << ")";
+			}
+			else if (i == 1 && (coef[i] == 1 || coef[i] == -1)) {
+				cout << "(x+" << a << ")";
+			}
+			else if (coef[i] == 1) {
+				cout << "(x+" << a << ")^" << i;
+			}
+			else if (i == degree && coef[i] == -1) {
+				cout << "-(x+" << a << ")^" << i;
+			}
+			else {
+				cout << coef[i] << "(x+" << a << ")^" << i;
+			}
+			first = false;
+		}
+	}
+	cout << endl;
+}
+
+void EnterAndPrintPolynomial(double* coef, int degree) {
+	for (int i = degree; i >= 0; i--) {
+		cout << "Enter coefficient before x^" << i << ">> ";
+		cin >> coef[i];
+	}
+	PrintPolynomial(coef, degree);
+}
+
+void AddPolynomials(double* coef_p, int degree_p, double* coef_q, int degree_q) {
+	int lower_degree = degree_p > degree_q ? degree_q : degree_p;
+	int upper_degree = degree_p + degree_q - lower_degree;
+	double* res = new double[upper_degree + 1];
+	for (int i = 0; i <= lower_degree; i++) {
+		res[i] = coef_p[i] + coef_q[i];
+	}
+	for (int i = lower_degree + 1; i <= upper_degree; i++) {
+		if (degree_p > degree_q) {
+			res[i] = coef_p[i];
+		}
+		if (degree_p < degree_q) {
+			res[i] = coef_q[i];
+		}
+	}
+	cout << "A(x)=";
+	PrintPolynomial(res, upper_degree);
+	delete[] res;
+
+}
+
+void SubtractPolynomials(double* coef_p, int degree_p, double* coef_q, int degree_q) {
+	int lower_degree = degree_p > degree_q ? degree_q : degree_p;
+	int upper_degree = degree_p + degree_q - lower_degree;
+	double* res = new double[upper_degree + 1];
+	for (int i = 0; i <= lower_degree; i++) {
+		res[i] = coef_p[i] - coef_q[i];
+	}
+	for (int i = lower_degree + 1; i <= upper_degree; i++) {
+		if (degree_p > degree_q) {
+			res[i] = coef_p[i];
+		}
+		if (degree_p < degree_q) {
+			res[i] = -coef_q[i];
+		}
+	}
+	cout << "A(x)=";
+	PrintPolynomial(res, upper_degree);
+	delete[] res;
+}
+
+void MultiplyPolynimials(double* coef_p, int degree_p, double* coef_q, int degree_q) {
+	double* res = new double[degree_p + degree_q + 1];
+	for (int i = 0; i <= degree_p + degree_q; i++) {
+		res[i] = 0;
+	}
+	for (int i = 0; i <= degree_p; i++) {
+		for (int j = 0; j <= degree_q; j++) {
+			res[i + j] += coef_p[i] * coef_q[j];
+		}
+	}
+	cout << "A(x)=";
+	PrintPolynomial(res, degree_p + degree_q);
+	delete[]res;
+}
+
+void MultiplyPolynomialByScalar(double* coef_p, int degree_p) {
+	cout << "Enter rational number>> ";
+	double scalar;
+	cin >> scalar;
+	cout << "Result: ";
+	for (int i = 0; i <= degree_p; i++) {
+		coef_p[i] *= scalar;
+	}
+	PrintPolynomial(coef_p, degree_p);
+}
+
+double FindValue(double* coef_p, int degree_p, double x) {
+	double result = 0.0;
+	for (int i = degree_p; i >= 0; i--) {
+		result += coef_p[i] * pow(x, i);
+	}
+	return result;
+}
+
+void DividePolynomials(double* coef_p, int& degree_p, double* coef_q, int degree_q, double* quotient, double* remainder) {
+	bool isZeroQ = true;
+	for (int i = 0; i <= degree_q; i++) {
+		if (fabs(coef_q[i]) > ZERO) {
+			isZeroQ = false;
+			break;
+		}
+	}
+	if (isZeroQ) {
+		cout << "Error: Divisor is zero." << endl;
+		return;
+	}
+
+	int quotient_degree = degree_p - degree_q;
+
+	for (int i = 0; i <= quotient_degree; i++) {
+		quotient[i] = 0;
+	}
+	for (int i = 0; i <= degree_p; i++) {
+		remainder[i] = coef_p[i];
+	}
+
+	while (degree_p >= degree_q) {
+		double leadCoeffDividend = remainder[degree_p];
+		double leadCoeffDivisor = coef_q[degree_q];
+		double coeffQuotient = leadCoeffDividend / leadCoeffDivisor;
+		int degreeDiff = degree_p - degree_q;
+
+		quotient[degreeDiff] = coeffQuotient;
+
+		for (int i = 0; i <= degree_q; i++) {
+			int currentIndex = i + degreeDiff;
+			if (currentIndex <= degree_p) {
+				remainder[currentIndex] -= coef_q[i] * coeffQuotient;
+			}
+		}
+
+		while (degree_p >= 0 && (fabs(remainder[degree_p]) < ZERO)) {
+			degree_p--;
+		}
+	}
+}
+
+void GCD_Polynomials(double* coef_p, int degree_p, double* coef_q, int degree_q, double* gcd, int& degree_gcd) {
+	double* quotient = new double[degree_p + 1];
+	double* remainder = new double[degree_p + 1];
+
+	while (degree_q >= 0) {
+		DividePolynomials(coef_p, degree_p, coef_q, degree_q, quotient, remainder);
+		for (int i = 0; i <= degree_q; i++) {
+			coef_p[i] = coef_q[i];
+		}
+		degree_p = degree_q;
+
+		for (int i = 0; i <= degree_p; i++) {
+			coef_q[i] = remainder[i];
+		}
+		degree_q = degree_p;
+
+		while (degree_q >= 0 && fabs(coef_q[degree_q]) < ZERO) {
+			degree_q--;
+		}
+	}
+
+	for (int i = 0; i <= degree_p; i++) {
+		gcd[i] = coef_p[i];
+	}
+	degree_gcd = degree_p;
+	if (degree_p == 0) {
+		gcd[0] = 1;
+	}
+
+	delete[] quotient;
+	delete[] remainder;
+}
+
+void VietaFormulas(double* coef_p, int degree_p) {
+	double a_n = coef_p[degree_p];
+	cout << "Vieta's Formulas for polynomial: P(x) = ";
+	PrintPolynomial(coef_p, degree_p);
+
+	for (int i = 1; i <= degree_p; i++) {
+		double result = (i % 2 == 0 ? 1 : -1) * coef_p[degree_p - i] / a_n;
+		cout << "Sum of products of " << i << " roots = " << result << endl;
+	}
+}
+
+void CalculateBinomialCoefficients(int n, double a, double* coef_binom) {
+	double current = 1.0;
+	for (int k = 0; k <= n; ++k) {
+		coef_binom[k] = current * pow(a, n - k);
+		current *= (n - k) / (k + 1.0);
+	}
+}
+
+void TransformToXPlusA(double* coef_p, int degree_p, double a, double* coef_transformed) {
+	double* coef_current = new double[degree_p + 1];
+	double* coef_binom = new double[degree_p + 1];
+
+	for (int i = 0; i <= degree_p; i++) {
+		coef_transformed[i] = 0;
+		coef_current[i] = coef_p[i];
+	}
+
+	for (int i = degree_p; i >= 0; i--) {
+		CalculateBinomialCoefficients(i, a, coef_binom);
+
+		double quotient = coef_current[i];
+		coef_transformed[i] = quotient;
+
+		for (int j = 0; j <= i; j++) {
+			coef_current[j] -= quotient * coef_binom[j];
+		}
+	}
+
+	delete[] coef_current;
+	delete[] coef_binom;
+}
+
+void PrintFactorization(double* factorization, int size) {
+	for (int i = 0; i < size; i++) {
+		if (factorization[i] < 0) {
+
+			if (factorization[i + 1] == 1) {
+				cout << "(x+" << abs(factorization[i++]) << ")";
+			}
+			else {
+				cout << "(x+" << abs(factorization[i]) << ")^" << factorization[++i];
+			}
+		}
+		else {
+			if (factorization[i + 1] == 1) {
+				cout << "(x-" << factorization[i++] << ")";
+			}
+			else {
+				cout << "(x-" << factorization[i] << ")^" << factorization[++i];
+			}
+		}
+	}
+}
+
+void PolynomialFactorization(double* coef_p, int degree_p, double* roots, int root_count) {
+	cout << "RATIONAL ROOTS:\n";
+	double* coef_temp = new double[degree_p + 1];
+	for (int j = 0; j <= degree_p; ++j) {
+		coef_temp[j] = coef_p[j];
+	}
+
+	double* factorization = new double[root_count * 2];
+	int index = 0;
+
+	for (int i = 0; i < root_count; i++) {
+		double root = roots[i];
+		int multiplicity = 0;
+		double* new_coef = new double[degree_p];
+
+		while (fabs(FindValue(coef_temp, degree_p, root)) < ZERO) {
+			multiplicity++;
+			new_coef[degree_p - 1] = coef_temp[degree_p];
+			for (int j = degree_p - 2; j >= 0; j--) {
+				new_coef[j] = new_coef[j + 1] * root + coef_temp[j + 1];
+			}
+			for (int j = 0; j < degree_p; j++) {
+				coef_temp[j] = new_coef[j];
+			}
+			degree_p--;
+		}
+
+		delete[] new_coef;
+		factorization[index++] = root;
+		factorization[index++] = multiplicity;
+		cout << "x=" << root << " -> " << multiplicity << "-fold root\n";
+	}
+	delete[] coef_temp;
+	PrintFactorization(factorization, index);
+	cout << "=0" << endl;
+}
+
+void FindDivisors(int num, double* arr, int& count) {
+	for (unsigned i = 1; i <= abs(num); i++) {
+		if (abs(num) % i == 0) {
+			arr[count++] = i;
+		}
+	}
+}
+
+void FindRationalRoots(double* coef_p, int degree_p) {
+	int constant_term = coef_p[0];
+	double constant_divisors[100];
+	int constant_count = 0;
+	FindDivisors(constant_term, constant_divisors, constant_count);
+
+	int leading_coef = coef_p[degree_p];
+	double leading_divisors[100];
+	int leading_count = 0;
+	FindDivisors(leading_coef, leading_divisors, leading_count);
+
+	double possible_roots[200];
+	int root_count = 0;
+	for (int i = 0; i < constant_count; i++) {
+		for (int j = 0; j < leading_count; j++) {
+			possible_roots[root_count++] = (double)constant_divisors[i] / leading_divisors[j];
+			possible_roots[root_count++] = (double)(-constant_divisors[i]) / leading_divisors[j];
+		}
+	}
+
+	double real_roots[100];
+	int real_root_count = 0;
+	for (int i = 0; i < root_count; i++) {
+		if (fabs(FindValue(coef_p, degree_p, possible_roots[i])) < ZERO) {
+			real_roots[real_root_count++] = possible_roots[i];
+		}
+	}
+
+	if (real_root_count == 0) {
+		cout << "No rational roots!" << endl;
+		return;
+	}
+	else {
+		PolynomialFactorization(coef_p, degree_p, real_roots, real_root_count);
+	}
+}
+
+
+
+int main()
+{
+	cout << "Welcome to Polynomial Calculator - a mini project intended to work with polynomials with rational coefficients" << endl;
+	cout << "Choose one of the following functionalities:" << endl << "1) Add polynomials" << endl << "2) Subtract polynomials" << endl <<
+		"3) Multiply polynomials" << endl << "4) Divide polynomials" << endl << "5) Multiply polynomial by scalar" << endl <<
+		"6) Find value of polynomial at a given numberer" << endl << "7) Find GCD of two polynomials" << endl <<
+		"8) Display Vieta's formulas for a given polynomial" << endl << "9) Represent a polynomial in powers of (x+a)" << endl <<
+		"10) Factor polynomial and find its rational roots" << endl << "11) Quit program" << endl;
+
+	int option = 0;
+	while (true) {
+		cout << "Enter your option here>> ";
+		cin >> option;
+
+		if (option == 1 || option == 2 || option == 3 || option == 4 || option == 7) {
+			cout << "Enter Polynomial P(x)" << endl;
+			cout << "Enter degree of your polynomial>> ";
+			int degree_p;
+			cin >> degree_p;
+			while (!isValidInput(degree_p)) {
+				cout << "The polynomial must have a degree of at least 1" << endl;
+				cout << "Enter degree of your polynomial>> ";
+				cin >> degree_p;
+			}
+			double* coef_p = new double[degree_p + 1];
+			EnterAndPrintPolynomial(coef_p, degree_p);
+
+			cout << "Enter Polynomial Q(x)" << endl;
+			cout << "Enter degree of your polynomial>> ";
+			int degree_q;
+			cin >> degree_q;
+			while (!isValidInput(degree_q)) {
+				cout << "The polynomial must have a degree of at least 1" << endl;
+				cout << "Enter degree of your polynomial>> ";
+				cin >> degree_q;
+			}
+			double* coef_q = new double[degree_q + 1];
+			EnterAndPrintPolynomial(coef_q, degree_q);
+
+
+			if (option == 1) {
+				AddPolynomials(coef_p, degree_p, coef_q, degree_q);
+			}
+
+			if (option == 2) {
+				SubtractPolynomials(coef_p, degree_p, coef_q, degree_q);
+			}
+
+			if (option == 3) {
+				MultiplyPolynimials(coef_p, degree_p, coef_q, degree_q);
+			}
+
+			if (option == 4) {
+				int quotient_degree = degree_p - degree_q;
+				double* quotient = new double[degree_p - degree_q + 1];
+				double* remainder = new double[degree_p + 1];
+				DividePolynomials(coef_p, degree_p, coef_q, degree_q, quotient, remainder);
+				cout << "Quotient: ";
+				PrintPolynomial(quotient, quotient_degree);
+				cout << "Remainder: ";
+				if (degree_p == -1) {
+					cout << 0 << endl;
+				}
+				else {
+					PrintPolynomial(remainder, degree_p);
+				}
+				delete[]quotient;
+				delete[]remainder;
+			}
+
+			if (option == 7) {
+				int degree_gcd = degree_q;
+				double* gcd = new double[degree_gcd + 1];
+				GCD_Polynomials(coef_p, degree_p, coef_q, degree_q, gcd, degree_gcd);
+
+				cout << "GCD(P(x), Q(x)): ";
+				PrintPolynomial(gcd, degree_gcd);
+				delete[]gcd;
+			}
+			delete[] coef_p;
+			delete[] coef_q;
+		}
+		else if (option == 5 || option == 6 || option == 8 || option == 9 || option == 10) {
+			cout << "Enter Polynomial P(x)" << endl;
+			cout << "Enter degree of your polynomial>> ";
+			int degree_p;
+			cin >> degree_p;
+			while (!isValidInput(degree_p)) {
+				cout << "The polynomial must have a degree of at least 1" << endl;
+				cout << "Enter degree of your polynomial>> ";
+				cin >> degree_p;
+			}
+			double* coef_p = new double[degree_p + 1];
+			EnterAndPrintPolynomial(coef_p, degree_p);
+
+			if (option == 5) {
+				MultiplyPolynomialByScalar(coef_p, degree_p);
+			}
+
+			if (option == 6) {
+				cout << "Enter rational number>> ";
+				double scalar;
+				cin >> scalar;
+				cout << "P(" << scalar << ") = " << FindValue(coef_p, degree_p, scalar) << endl;
+			}
+
+			if (option == 8) {
+				VietaFormulas(coef_p, degree_p);
+			}
+
+			if (option == 9) {
+				double a;
+				cout << "Enter the value of a: ";
+				cin >> a;
+
+				double* coef_transformed = new double[degree_p + 1];
+				TransformToXPlusA(coef_p, degree_p, a, coef_transformed);
+
+				cout << "P(x+" << a << ") = ";
+				PrintPolynomialPlusA(coef_transformed, degree_p, a);
+
+				delete[] coef_transformed;
+			}
+
+			if (option == 10) {
+				FindRationalRoots(coef_p, degree_p);
+			}
+
+			delete[] coef_p;
+		}
+		else if (option == 11) {
+			break;
+		}
+		else {
+			cout << "Invalid option!" << endl;
+		}
+	}
+}
